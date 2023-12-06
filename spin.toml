@@ -1,0 +1,18 @@
+spin_manifest_version = 2
+
+[application]
+name = "advent-of-spin-challenge-two"
+version = "0.1.0"
+authors = ["James Hagans <jhagans@acm.org>"]
+description = ""
+
+[[trigger.http]]
+route = "/..."
+component = "advent-of-spin-challenge-two"
+
+[component.advent-of-spin-challenge-two]
+source = "target/wasm32-wasi/release/advent_of_spin_challenge_two.wasm"
+allowed_outbound_hosts = []
+[component.advent-of-spin-challenge-two.build]
+command = "cargo build --target wasm32-wasi --release"
+watch = ["src/**/*.rs", "Cargo.toml"]
