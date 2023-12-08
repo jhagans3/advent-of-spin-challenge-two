@@ -6,23 +6,23 @@ use std::cmp;
 
 #[derive(Debug, Deserialize, Clone)]
 struct Input {
-    kids: Vec<i8>,
-    weight: Vec<i8>,
-    capacity: i8,
+    kids: Vec<u32>,
+    weight: Vec<u32>,
+    capacity: u32,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 struct Item {
-    kids: i8,
-    weight: i8,
+    kids: u32,
+    weight: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
 struct Output {
-    kids: i8,
+    kids: u32,
 }
 
-fn knapsack(items: Vec<Item>, max_weight: i8) -> Vec<Item> {
+fn knapsack(items: Vec<Item>, max_weight: u32) -> Vec<Item> {
     let mut best_value = vec![vec![0; max_weight as usize + 1]; items.len() + 1];
     for (i, it) in items.iter().enumerate() {
         for w in 1..max_weight + 1 {
@@ -92,8 +92,8 @@ fn post_handler(
     }
 
     let table = knapsack(items, capacity);
-    let total_weight = table.iter().map(|x| x.weight).sum::<i8>();
-    let total_kids = table.iter().map(|x| x.kids).sum::<i8>();
+    let total_weight = table.iter().map(|x| x.weight).sum::<u32>();
+    let total_kids = table.iter().map(|x| x.kids).sum::<u32>();
 
     println!("Total weight: {total_weight}");
     println!("Total kids: {total_kids}");
