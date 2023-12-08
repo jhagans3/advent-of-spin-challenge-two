@@ -1,9 +1,10 @@
+use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use spin_sdk::http::{IntoResponse, Request};
+use spin_sdk::http::{IntoResponse, Json, Params, Request, Router};
 use spin_sdk::http_component;
 use std::cmp;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct Input {
     kids: Vec<i8>,
     weight: Vec<i8>,
@@ -53,44 +54,55 @@ fn knapsack(items: Vec<Item>, max_weight: i8) -> Vec<Item> {
 #[http_component]
 fn handle_advent_of_spin_challenge_two(req: Request) -> anyhow::Result<impl IntoResponse> {
     println!("Handling request to {:?}", req.header("spin-full-url"));
+    let mut router = Router::new();
+    router.get("/", get_handler);
+    router.post("/", post_handler);
 
-    let body = req.body();
-    let json_result = std::str::from_utf8(body);
+    Ok(router.handle(req))
+}
 
-    let response = if let Ok(json_str) = json_result {
-        let input: Input = serde_json::from_str(json_str).unwrap();
-        println!("This is a JSON str {json_str:?}");
-        println!("This is an Input struct {input:?}");
+fn get_handler(_req: Request, _params: Params) -> anyhow::Result<impl IntoResponse> {
+    Ok(http::Response::builder()
+        .status(StatusCode::OK)
+        .header("content-type", "application/json")
+        .body("{}".to_string())?)
+}
 
-        let zipped = input.kids.iter().zip(input.weight.iter());
-        let mut items = Vec::new();
+fn post_handler(
+    req: http::Request<Json<Input>>,
+    _params: Params,
+) -> anyhow::Result<impl IntoResponse> {
+    let input_json = req.body();
+    let kids = &input_json.kids;
+    let weights = &input_json.weight;
+    let capacity = input_json.capacity;
 
-        for (k, w) in zipped {
-            let item = Item {
-                kids: *k,
-                weight: *w,
-            };
+    println!("This is an Input struct {input_json:?}");
 
-            items.push(item);
-        }
+    let zipped = kids.iter().zip(weights.iter());
+    let mut items = Vec::new();
 
-        let table = knapsack(items, input.capacity);
-        let total_weight = table.iter().map(|x| x.weight).sum::<i8>();
-        let total_kids = table.iter().map(|x| x.kids).sum::<i8>();
+    for (k, w) in zipped {
+        let item = Item {
+            kids: *k,
+            weight: *w,
+        };
 
-        println!("Total weight: {total_weight}");
-        println!("Total kids: {total_kids}");
+        items.push(item);
+    }
 
-        let response_body =
-            serde_json::to_string(&Output { kids: total_kids }).unwrap_or("".to_string());
+    let table = knapsack(items, capacity);
+    let total_weight = table.iter().map(|x| x.weight).sum::<i8>();
+    let total_kids = table.iter().map(|x| x.kids).sum::<i8>();
 
-        http::Response::builder()
-            .status(200)
-            .header("content-type", "application/json")
-            .body(response_body)?
-    } else {
-        http::Response::builder().status(400).body("".to_string())?
-    };
+    println!("Total weight: {total_weight}");
+    println!("Total kids: {total_kids}");
 
-    Ok(response)
+    let response_body =
+        serde_json::to_string(&Output { kids: total_kids }).unwrap_or("".to_string());
+
+    Ok(http::Response::builder()
+        .status(StatusCode::OK)
+        .header("content-type", "application/json")
+        .body(response_body)?)
 }
